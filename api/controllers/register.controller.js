@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from "uuid";
 import multer from "multer";
 import dotenv from "dotenv";
 dotenv.config();
-
 const s3Client = new S3Client({ region: "ap-south-1" });
 const rekognitionClient = new RekognitionClient({ region: "ap-south-1" });
 const dynamoDbClient = new DynamoDBClient({ region: "ap-south-1" });

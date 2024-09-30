@@ -6,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { AlertCircle, Upload, ShieldCheck, Zap, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 export default function Registration() {
+  const navigate = useNavigate();
     const [showRegistration, setShowRegistration] = useState(false);
     const [fullName, setFullName] = useState('');
     const [image, setImage] = useState(null);
@@ -49,6 +51,7 @@ export default function Registration() {
             duration : 2500,
             
           })
+          navigate("/");
         } catch (error) {
           setError('Registration failed. Please try again.');
         }
