@@ -2,14 +2,15 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Camera } from "lucide-react";
-
+import { useToast } from '@/hooks/use-toast';
 const Authentication = () => {
+  const {toast} = useToast();
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const streamRef = useRef(null); // Reference to the stream
+  const streamRef = useRef(null);
 
   const startCamera = useCallback(async () => {
     try {
@@ -28,8 +29,6 @@ const Authentication = () => {
       context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
       const imageDataUrl = canvasRef.current.toDataURL('image/jpeg');
       setImage(imageDataUrl);
-      
-      // Stop the camera stream properly
       stopCamera();
     }
   }, []);
@@ -37,18 +36,15 @@ const Authentication = () => {
   const stopCamera = () => {
     if (streamRef.current) {
       const tracks = streamRef.current.getTracks();
-      tracks.forEach(track => {
-        track.stop(); // Stop each track
-      });
-      videoRef.current.srcObject = null; // Clear the video source
-      streamRef.current = null; // Clear the reference
+      tracks.forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+      streamRef.current = null;
     }
   };
 
   useEffect(() => {
     startCamera();
-    
-    // Cleanup function to stop camera when component unmounts
+
     return () => {
       stopCamera();
     };
@@ -59,15 +55,38 @@ const Authentication = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(image);
-      const blob = await response.blob();
-      const formData = new FormData();
-      formData.append('image', blob, 'capture.jpg');
+      const base64Image = image.split(',')[1];
 
-      // Simulated API call to AWS
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      setResult('Employee recognized: John Doe');
+      const response = await fetch("/api/get/auth", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: base64Image }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data)
+        const bodyData = JSON.parse(data.body);
+        console.log("Body Data:", bodyData); 
+    
+        // Access the fullName property
+        const fullName = bodyData.fullName; // "Subhodeep Basak"
+        console.log("Full Name:", fullName); // Output the full name
+        toast({
+          title: `Authentication successfull, Welcome${fullName}`,
+          variant: "success",
+          duration : 2500,
+          
+        })
+        setResult(`Authentication successfull, Welcome ${fullName}` || 'Employee recognized');
+      } else {
+        setResult('Error recognizing employee');
+      }
+
     } catch (error) {
+      console.error('Error sending image:', error);
       setResult('Error recognizing employee');
     } finally {
       setLoading(false);
@@ -106,7 +125,7 @@ const Authentication = () => {
             <Button onClick={sendImage} className="w-full" disabled={loading}>
               {loading ? 'Sending...' : 'Send Image'}
             </Button>
-            <Button onClick={retake} variant="outline" className="w-full">
+            <Button onClick={retake} variant="outline" className="w-full" disabled={loading}>
               Retake Photo
             </Button>
           </>
